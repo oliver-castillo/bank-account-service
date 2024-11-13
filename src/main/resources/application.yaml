@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: bank-account-service
+  profiles:
+    active: dev
