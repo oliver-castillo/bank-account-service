@@ -1,9 +1,9 @@
 spring:
-  data:
-    mongodb:
-      uri: mongodb://${DB_HOST}:${DB_PORT}/${DB_NAME}
-      auto-index-creation: true
-  webflux:
-    base-path: /api/v1
-server:
-  port: 9002
+  config:
+    import: 'optional:configserver:'
+  cloud:
+    config:
+      uri: http://localhost:8888
+      name: account-microservice
+      profile: dev
+      label: main
