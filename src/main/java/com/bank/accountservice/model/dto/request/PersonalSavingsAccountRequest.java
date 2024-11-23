@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class PersonalCheckingAccountRequest extends AccountRequest {
+public class PersonalSavingsAccountRequest extends AccountRequest {
     @NotNull
-    private Double maintenanceFee;
+    private Integer transactionLimit;
 }

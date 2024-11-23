@@ -1,27 +1,41 @@
 package com.bank.accountservice.mapper;
 
-import com.bank.accountservice.model.document.BusinessCheckingAccountDocument;
-import com.bank.accountservice.model.document.FixedTermAccountDocument;
-import com.bank.accountservice.model.document.PersonalCheckingAccountDocument;
-import com.bank.accountservice.model.document.SavingAccountDocument;
-import com.bank.accountservice.model.dto.request.BusinessCheckingAccountRequest;
-import com.bank.accountservice.model.dto.request.FixedTermAccountRequest;
-import com.bank.accountservice.model.dto.request.PersonalCheckingAccountRequest;
-import com.bank.accountservice.model.dto.request.SavingAccountRequest;
+import com.bank.accountservice.model.document.Account;
+import com.bank.accountservice.model.document.business.BusinessCheckingAccount;
+import com.bank.accountservice.model.document.business.BusinessPymeCheckingAccount;
+import com.bank.accountservice.model.document.personal.PersonalCheckingAccount;
+import com.bank.accountservice.model.document.personal.PersonalFixedTermAccount;
+import com.bank.accountservice.model.document.personal.PersonalSavingsAccount;
+import com.bank.accountservice.model.document.personal.PersonalVipSavingsAccount;
+import com.bank.accountservice.model.dto.request.*;
+import com.bank.accountservice.model.enums.AccountType;
+import com.bank.accountservice.model.enums.ClientType;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface AccountMapper {
-    @Mapping(target = "type", constant = "SAVING_ACCOUNT")
-    SavingAccountDocument toDocument(SavingAccountRequest request);
+    PersonalSavingsAccount toDocument(PersonalSavingsAccountRequest accountRequest);
 
-    @Mapping(target = "type", constant = "FIXED_TERM_ACCOUNT")
-    FixedTermAccountDocument toDocument(FixedTermAccountRequest request);
+    PersonalVipSavingsAccount toDocument(PersonalVipSavingsAccountRequest accountRequest);
 
-    @Mapping(target = "type", constant = "CHECKING_ACCOUNT")
-    BusinessCheckingAccountDocument toDocument(BusinessCheckingAccountRequest request);
+    PersonalCheckingAccount toDocument(PersonalCheckingAccountRequest accountRequest);
 
-    @Mapping(target = "type", constant = "CHECKING_ACCOUNT")
-    PersonalCheckingAccountDocument toDocument(PersonalCheckingAccountRequest request);
+    PersonalFixedTermAccount toDocument(PersonalFixedTermAccountRequest accountRequest);
+
+    BusinessCheckingAccount toDocument(BusinessCheckingAccountRequest accountRequest);
+
+    BusinessPymeCheckingAccount toDocument(BusinessPymeCheckingAccountRequest accountRequest);
+
+    default Account toDocument(AccountType accountType, ClientType clientType, AccountRequest accountRequest) {
+        return switch (clientType) {
+            case PERSONAL -> switch (accountType) {
+                case SAVINGS_ACCOUNT -> toDocument((PersonalSavingsAccountRequest) accountRequest);
+                case CHECKING_ACCOUNT -> toDocument((PersonalCheckingAccountRequest) accountRequest);
+                case FIXED_TERM_ACCOUNT -> toDocument((PersonalFixedTermAccountRequest) accountRequest);
+            };
+            case PERSONAL_VIP -> toDocument((PersonalVipSavingsAccountRequest) accountRequest);
+            case BUSINESS -> toDocument((BusinessCheckingAccountRequest) accountRequest);
+            case BUSINESS_PYME -> toDocument((BusinessPymeCheckingAccountRequest) accountRequest);
+        };
+    }
 }

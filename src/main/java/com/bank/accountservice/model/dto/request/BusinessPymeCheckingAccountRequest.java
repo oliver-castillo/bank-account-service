@@ -5,10 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 @AllArgsConstructor
+//@NoArgsConstructor
 @Getter
 @Setter
-public class SavingAccountRequest extends AccountRequest {
-    private Integer monthlyTransactionLimit;
-
-    private String personalClientId;
+public class BusinessPymeCheckingAccountRequest extends BusinessAccountRequest {
 }

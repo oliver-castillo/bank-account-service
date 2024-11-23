@@ -1,15 +1,13 @@
-package com.bank.accountservice.model.document;
+package com.bank.accountservice.model.document.business;
 
-
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
 
+@AllArgsConstructor
 @Getter
 @Setter
-public class Signatory {
-    @Id
-    private String id;
+public class Holder {
     private String name;
     private String paternalSurname;
     private String maternalSurname;
