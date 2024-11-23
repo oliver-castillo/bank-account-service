@@ -1,8 +1,13 @@
 package com.bank.accountservice.service;
 
 import com.bank.accountservice.exception.AlreadyExistsException;
+import com.bank.accountservice.exception.NotFoundException;
 import com.bank.accountservice.mapper.AccountMapper;
 import com.bank.accountservice.model.dto.request.AccountRequest;
+import com.bank.accountservice.model.dto.request.PersonalCheckingAccountRequest;
+import com.bank.accountservice.model.dto.request.PersonalSavingsAccountRequest;
+import com.bank.accountservice.model.dto.request.PersonalVipSavingsAccountRequest;
+import com.bank.accountservice.model.dto.response.AccountResponse;
 import com.bank.accountservice.model.dto.response.OperationResponse;
 import com.bank.accountservice.model.enums.AccountType;
 import com.bank.accountservice.model.enums.ClientType;
@@ -12,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -21,31 +27,46 @@ public class DefaultAccountService implements AccountService {
     private final AccountRepository repository;
     private final AccountMapper mapper;
 
+    /**
+     * Tipos de cuentas
+     * 1. Personal - Cuenta de ahorro (Savings Account)
+     * 2. Personal - Cuenta corriente (Checking Account)
+     * 3. Personal - Cuenta plazo fijo (Fixed Term Account)
+     * 4. Personal - Cuenta de ahorro VIP (VIP Savings Account)
+     * 5. Empresarial - Cuenta corriente (Checking Account)
+     * 6. Empresarial - Cuenta corriente Pyme (Pyme Checking Account)
+     */
+
     @Override
-    public Mono<OperationResponse> save(AccountType accountType, ClientType clientType, AccountRequest request) {
-        return validateClient(request.getClientId(), accountType, clientType)
-                .then(repository.save(mapper.toDocument(accountType, clientType, request)))
+    public Mono<OperationResponse> save(AccountRequest request) {
+        return validateRequest(request)
+                .then(repository.save(mapper.toDocument(request)))
                 .doOnSuccess(document -> log.info("Account {} created successfully", document.getId()))
                 .doOnError(error -> log.error("Error creating account: {}", error.getMessage()))
                 .doOnTerminate(() -> log.info("Account creation finished"))
                 .map(account -> new OperationResponse(ResponseMessage.CREATED_SUCCESSFULLY, HttpStatus.CREATED));
     }
 
+    @Override
+    public Flux<AccountResponse> findByClientId(String clientId) {
+        return repository.findAccountsByClientId(clientId).map(mapper::toResponse)
+                .switchIfEmpty(Mono.error(new NotFoundException(ResponseMessage.NOT_FOUND.getMessage())));
+    }
 
-    private Mono<Boolean> validateClient(String clientId, AccountType accountType, ClientType clientType) {
-        if (accountType != AccountType.FIXED_TERM_ACCOUNT && (clientType == ClientType.PERSONAL || clientType == ClientType.PERSONAL_VIP)) {
-            switch (accountType) {
-                case SAVINGS_ACCOUNT:
-                    if (clientType == ClientType.PERSONAL_VIP) {
-                        return canCreatePersonalVipSavingsAccount(clientId);
-                    } else {
-                        return canCreatePersonalSavingsAccount(clientId);
-                    }
-                case CHECKING_ACCOUNT:
-                    return canCreatePersonalCheckingAccount(clientId);
-                default:
-                    return Mono.just(true);
-            }
+    @Override
+    public Mono<AccountResponse> findAccountsByClientIdAndAccountNumber(String clientId, String accountNumber) {
+        return repository.findAccountsByClientIdAndAccountNumber(clientId, accountNumber).map(mapper::toResponse)
+                .switchIfEmpty(Mono.error(new NotFoundException(ResponseMessage.NOT_FOUND.getMessage())));
+    }
+
+
+    private Mono<Boolean> validateRequest(AccountRequest request) {
+        if (request instanceof PersonalSavingsAccountRequest) {
+            return canCreatePersonalSavingsAccount(request.getClientId());
+        } else if (request instanceof PersonalCheckingAccountRequest) {
+            return canCreatePersonalCheckingAccount(request.getClientId());
+        } else if (request instanceof PersonalVipSavingsAccountRequest) {
+            return canCreatePersonalVipSavingsAccount(request.getClientId());
         } else {
             return Mono.just(true);
         }

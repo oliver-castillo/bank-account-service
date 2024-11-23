@@ -12,7 +12,7 @@ import java.util.Set;
 @Getter
 @Setter
 public class PersonalFixedTermAccount extends Account {
-    private final int transactionLimit;
+    private int transactionLimit;
     private Set<LocalDate> allowedTransactionDates;
 
     public PersonalFixedTermAccount() {

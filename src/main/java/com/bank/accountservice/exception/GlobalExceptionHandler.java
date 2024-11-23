@@ -19,9 +19,14 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(AlreadyExistsException.class)
-    public Mono<ResponseEntity<OperationResponse>> handleException(AlreadyExistsException e) {
+    public Mono<ResponseEntity<OperationResponse>> handleAlreadyExistsException(AlreadyExistsException e) {
         log.error("Exception occurred: {}", e.getMessage());
         return Mono.just(new ResponseEntity<>(new OperationResponse(e.getMessage(), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST));
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public Mono<ResponseEntity<OperationResponse>> handleNotFoundException(NotFoundException e) {
+        return Mono.just(new ResponseEntity<>(new OperationResponse(e.getMessage(), HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND));
     }
 
     @ExceptionHandler(value = {WebExchangeBindException.class})

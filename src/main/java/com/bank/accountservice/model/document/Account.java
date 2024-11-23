@@ -17,11 +17,11 @@ public abstract class Account {
 
     private String clientId;
 
-    private final AccountType accountType;
+    private AccountType accountType;
 
-    private final ClientType clientType;
+    private ClientType clientType;
 
-    private final String accountNumber;
+    private String accountNumber;
 
     private double balance;
 
