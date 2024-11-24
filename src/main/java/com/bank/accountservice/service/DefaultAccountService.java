@@ -43,69 +43,46 @@ public class DefaultAccountService implements AccountService {
                 .then(repository.save(mapper.toDocument(request)))
                 .doOnSuccess(document -> log.info("Account {} created successfully", document.getId()))
                 .doOnError(error -> log.error("Error creating account: {}", error.getMessage()))
-                .doOnTerminate(() -> log.info("Account creation finished"))
                 .map(account -> new OperationResponse(ResponseMessage.CREATED_SUCCESSFULLY, HttpStatus.CREATED));
     }
 
     @Override
     public Flux<AccountResponse> findByClientId(String clientId) {
-        return repository.findAccountsByClientId(clientId).map(mapper::toResponse)
+        return repository.findAccountsByClientId(clientId)
+                .map(mapper::toResponse)
                 .switchIfEmpty(Mono.error(new NotFoundException(ResponseMessage.NOT_FOUND.getMessage())));
     }
 
     @Override
     public Mono<AccountResponse> findAccountsByClientIdAndAccountNumber(String clientId, String accountNumber) {
-        return repository.findAccountsByClientIdAndAccountNumber(clientId, accountNumber).map(mapper::toResponse)
+        return repository.findAccountsByClientIdAndAccountNumber(clientId, accountNumber)
+                .map(mapper::toResponse)
                 .switchIfEmpty(Mono.error(new NotFoundException(ResponseMessage.NOT_FOUND.getMessage())));
     }
 
-
     private Mono<Boolean> validateRequest(AccountRequest request) {
         if (request instanceof PersonalSavingsAccountRequest) {
-            return canCreatePersonalSavingsAccount(request.getClientId());
+            return validateAccountCreation(request.getClientId(), AccountType.SAVINGS_ACCOUNT, ClientType.PERSONAL,
+                    "El Cliente Personal solo puede tener una Cuenta de Ahorros");
         } else if (request instanceof PersonalCheckingAccountRequest) {
-            return canCreatePersonalCheckingAccount(request.getClientId());
+            return validateAccountCreation(request.getClientId(), AccountType.CHECKING_ACCOUNT, ClientType.PERSONAL,
+                    "El Cliente Personal solo puede tener una Cuenta Corriente");
         } else if (request instanceof PersonalVipSavingsAccountRequest) {
-            return canCreatePersonalVipSavingsAccount(request.getClientId());
-        } else {
-            return Mono.just(true);
+            return validateAccountCreation(request.getClientId(), AccountType.SAVINGS_ACCOUNT, ClientType.PERSONAL_VIP,
+                    "El Cliente Personal VIP solo puede tener una Cuenta de Ahorros");
         }
+        return Mono.just(true);
     }
 
-    private Mono<Boolean> canCreatePersonalCheckingAccount(String clientId) {
+    private Mono<Boolean> validateAccountCreation(String clientId, AccountType accountType, ClientType clientType, String errorMessage) {
         return repository.findAccountsByClientId(clientId)
-                .filter(account -> account.getAccountType() == AccountType.CHECKING_ACCOUNT && account.getClientType() == ClientType.PERSONAL)
+                .filter(account -> account.getAccountType() == accountType && account.getClientType() == clientType)
                 .hasElements()
                 .flatMap(exists -> {
                     if (Boolean.TRUE.equals(exists)) {
-                        return Mono.error(new AlreadyExistsException("El Cliente Personal solo puede tener una Cuenta Corriente"));
+                        return Mono.error(new AlreadyExistsException(errorMessage));
                     }
                     return Mono.just(false);
                 });
     }
-
-    private Mono<Boolean> canCreatePersonalSavingsAccount(String clientId) {
-        return repository.findAccountsByClientId(clientId)
-                .filter(account -> account.getAccountType() == AccountType.SAVINGS_ACCOUNT && account.getClientType() == ClientType.PERSONAL)
-                .hasElements()
-                .flatMap(exists -> {
-                    if (Boolean.TRUE.equals(exists)) {
-                        return Mono.error(new AlreadyExistsException("El Cliente Personal solo puede tener una Cuenta de Ahorros"));
-                    }
-                    return Mono.just(false);
-                });
-    }
-
-    private Mono<Boolean> canCreatePersonalVipSavingsAccount(String clientId) {
-        return repository.findAccountsByClientId(clientId)
-                .filter(account -> account.getAccountType() == AccountType.SAVINGS_ACCOUNT && account.getClientType() == ClientType.PERSONAL_VIP)
-                .hasElements()
-                .flatMap(exists -> {
-                    if (Boolean.TRUE.equals(exists)) {
-                        return Mono.error(new AlreadyExistsException("El Cliente Personal VIP solo puede tener una Cuenta de Ahorros"));
-                    }
-                    return Mono.just(false);
-                });
-    }
-
 }

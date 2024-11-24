@@ -29,6 +29,8 @@ public abstract class Account {
 
     private double transactionFee;
 
+    private boolean isEnabled = true;
+
     public boolean hasMaintenanceFee() {
         return false;
     }
@@ -53,18 +55,19 @@ public abstract class Account {
         return requiresTransactionFee(numberOfTransactions) ? transactionFee : 0;
     }
 
-    public boolean canMakeTransfer(double amount) {
-        return balance > 0 && balance >= amount;
+    public boolean canMakeTransfer(double amount, Long numberOfTransactions) {
+        double transferAmount = amount - calculateTransactionFee(numberOfTransactions);
+        return (balance > 0 && balance >= transferAmount) && isEnabled;
     }
 
     public boolean canMakeWithdrawal(double amount, Long numberOfTransactions) {
-        double withdrawalAmount = amount + calculateTransactionFee(numberOfTransactions);
-        return balance > 0 && balance >= withdrawalAmount;
+        double withdrawalAmount = amount - calculateTransactionFee(numberOfTransactions);
+        return (balance > 0 && balance >= withdrawalAmount) && isEnabled;
     }
 
     public boolean canMakeDeposit(double amount, Long numberOfTransactions) {
         double depositAmount = amount - calculateTransactionFee(numberOfTransactions);
-        return depositAmount > 0;
+        return depositAmount > 0 && isEnabled;
     }
 
     protected Account(AccountType accountType, ClientType clientType) {

@@ -14,7 +14,7 @@ public abstract class BusinessAccount extends Account {
     private Set<Holder> holders;
     private Set<Signatory> signatories;
 
-    public BusinessAccount(ClientType clientType) {
+    protected BusinessAccount(ClientType clientType) {
         super(AccountType.CHECKING_ACCOUNT, clientType);
     }
 }

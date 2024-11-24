@@ -15,23 +15,25 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping(value = "transactions")
 public class TransactionController {
-    private final TransactionService service;
+    private final TransactionService<TransferRequest> transferService;
+    private final TransactionService<WithdrawalRequest> withdrawalService;
+    private final TransactionService<DepositRequest> depositService;
 
     @PostMapping(value = "transfer")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<OperationResponse> save(@RequestBody @Valid TransferRequest request) {
-        return service.save(request);
+        return transferService.save(request);
     }
 
     @PostMapping(value = "withdrawal")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<OperationResponse> save(@RequestBody @Valid WithdrawalRequest request) {
-        return service.save(request);
+        return withdrawalService.save(request);
     }
 
     @PostMapping(value = "deposit")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<OperationResponse> save(@RequestBody @Valid DepositRequest request) {
-        return service.save(request);
+        return depositService.save(request);
     }
 }

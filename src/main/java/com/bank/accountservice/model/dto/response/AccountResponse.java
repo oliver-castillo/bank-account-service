@@ -19,6 +19,7 @@ public record AccountResponse(
         Double averageMonthlyMinimumAmount,
         Set<HolderResponse> holders,
         Set<SignatoryResponse> signatories,
+        boolean isEnabled,
         int freeTransactions,
         double transactionFee) {
 

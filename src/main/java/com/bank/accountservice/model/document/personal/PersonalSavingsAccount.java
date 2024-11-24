@@ -30,4 +30,14 @@ public class PersonalSavingsAccount extends Account implements TransactionLimitA
     public boolean hasTransactionLimit() {
         return true;
     }
+
+    @Override
+    public boolean canMakeWithdrawal(double amount, Long numberOfTransactions) {
+        return super.canMakeWithdrawal(amount, numberOfTransactions) && numberOfTransactions <= transactionLimit;
+    }
+
+    @Override
+    public boolean canMakeDeposit(double amount, Long numberOfTransactions) {
+        return super.canMakeDeposit(amount, numberOfTransactions) && numberOfTransactions <= transactionLimit;
+    }
 }
