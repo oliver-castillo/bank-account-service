@@ -18,8 +18,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDate;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -41,13 +42,14 @@ public class DefaultTransactionService implements TransactionService {
 
     private Mono<Void> makeTransaction(TransactionRequest request) {
         return Mono.just(request)
-                .flatMap(request1 -> {
-                    if (request1 instanceof TransferRequest transfer) {
+                .flatMap(req -> countTransactions(getAccountNumber(req)))
+                .flatMap(transactionCount -> {
+                    if (request instanceof TransferRequest transfer) {
                         return makeTransfer(transfer);
-                    } else if (request1 instanceof WithdrawalRequest withdrawal) {
-                        return makeWithdrawal(withdrawal, countTransactions(withdrawal.getSourceAccountNumber()));
-                    } else if (request1 instanceof DepositRequest deposit) {
-                        return makeDeposit(deposit, countTransactions(deposit.getDestinationAccountNumber()));
+                    } else if (request instanceof WithdrawalRequest withdrawal) {
+                        return makeWithdrawal(withdrawal, transactionCount);
+                    } else if (request instanceof DepositRequest deposit) {
+                        return makeDeposit(deposit, transactionCount);
                     } else {
                         return Mono.error(new BadRequestException("Tipo de transacción no válido"));
                     }
@@ -61,32 +63,28 @@ public class DefaultTransactionService implements TransactionService {
 
 
     private Mono<Void> makeDeposit(DepositRequest request, Long numberOfTransactions) {
-        String destinationAccountNumber = request.getDestinationAccountNumber();
-        return findAccountByAccountNumber(destinationAccountNumber)
-                .doOnNext(account -> {
-                    if (account.canMakeDeposit(request.getAmount(), numberOfTransactions)) {
-                        double depositAmount = request.getAmount() - account.calculateTransactionFee(numberOfTransactions);
-                        account.setBalance(account.getBalance() + depositAmount);
-                    } else {
-                        throw new BadRequestException("No puede hacer el depósito");
+        return findAccountByAccountNumber(request.getDestinationAccountNumber())
+                .flatMap(account -> {
+                    if (!account.canMakeWithdrawal(request.getAmount(), numberOfTransactions)) {
+                        return Mono.error(new BadRequestException("La cuenta no tiene suficiente saldo para hacer el retiro"));
                     }
+                    double withdrawalAmount = request.getAmount() + account.calculateTransactionFee(numberOfTransactions);
+                    account.setBalance(account.getBalance() - withdrawalAmount);
+                    return accountRepository.save(account);
                 })
-                .doOnNext(accountRepository::save)
                 .then();
     }
 
     private Mono<Void> makeWithdrawal(WithdrawalRequest request, Long numberOfTransactions) {
-        String destinationAccountNumber = request.getSourceAccountNumber();
-        return findAccountByAccountNumber(destinationAccountNumber)
-                .doOnNext(account -> {
-                    if (account.canMakeWithdrawal(request.getAmount(), numberOfTransactions)) {
-                        double withdrawalAmount = request.getAmount() + account.calculateTransactionFee(numberOfTransactions);
-                        account.setBalance(account.getBalance() - withdrawalAmount);
-                    } else {
-                        throw new BadRequestException("No puede hacer el retiro");
+        return findAccountByAccountNumber(request.getSourceAccountNumber())
+                .flatMap(account -> {
+                    if (!account.canMakeWithdrawal(request.getAmount(), numberOfTransactions)) {
+                        return Mono.error(new BadRequestException("La cuenta no tiene suficiente saldo para hacer el retiro"));
                     }
+                    double withdrawalAmount = request.getAmount() + account.calculateTransactionFee(numberOfTransactions);
+                    account.setBalance(account.getBalance() - withdrawalAmount);
+                    return accountRepository.save(account);
                 })
-                .doOnNext(accountRepository::save)
                 .then();
     }
 
@@ -107,15 +105,29 @@ public class DefaultTransactionService implements TransactionService {
                 .then();
     }
 
-    private Long countTransactions(String accountNumber) {
+    private Mono<Long> countTransactions(String accountNumber) {
         Mono<Long> numberOfWithdrawals = transactionRepository.findTransactionsByTransactionType(TransactionType.WITHDRAWAL)
                 .map(Withdrawal.class::cast)
-                .filter(withdrawal -> withdrawal.getSourceAccountNumber().equals(accountNumber))
+                .filter(withdrawal ->
+                        withdrawal.getSourceAccountNumber().equals(accountNumber) &&
+                                withdrawal.getDate().getMonth().equals(LocalDate.now().getMonth()))
                 .count();
+
         Mono<Long> numberOfDeposits = transactionRepository.findTransactionsByTransactionType(TransactionType.DEPOSIT)
                 .map(DepositRequest.class::cast)
                 .filter(deposit -> deposit.getDestinationAccountNumber().equals(accountNumber))
                 .count();
-        return Flux.merge(numberOfWithdrawals, numberOfDeposits).reduce(Long::sum).block();
+
+        return Mono.zip(numberOfWithdrawals, numberOfDeposits)
+                .map(tuple -> tuple.getT1() + tuple.getT2());
+    }
+
+    private String getAccountNumber(TransactionRequest request) {
+        if (request instanceof WithdrawalRequest withdrawal) {
+            return (withdrawal).getSourceAccountNumber();
+        } else if (request instanceof DepositRequest deposit) {
+            return (deposit).getDestinationAccountNumber();
+        }
+        throw new BadRequestException("Tipo de transacción no válido");
     }
 }

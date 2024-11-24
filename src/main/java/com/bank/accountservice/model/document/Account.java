@@ -1,6 +1,5 @@
 package com.bank.accountservice.model.document;
 
-import com.bank.accountservice.exception.BadRequestException;
 import com.bank.accountservice.model.enums.AccountType;
 import com.bank.accountservice.model.enums.ClientType;
 import com.bank.accountservice.util.AccountNumberGenerator;
@@ -60,22 +59,12 @@ public abstract class Account {
 
     public boolean canMakeWithdrawal(double amount, Long numberOfTransactions) {
         double withdrawalAmount = amount + calculateTransactionFee(numberOfTransactions);
-        if (balance > 0 && balance >= withdrawalAmount) {
-            return true;
-        } else {
-            throw new BadRequestException("La cuenta no tiene suficiente saldo para hacer el retiro");
-        }
-        //return balance > 0 && balance >= withdrawalAmount;
+        return balance > 0 && balance >= withdrawalAmount;
     }
 
     public boolean canMakeDeposit(double amount, Long numberOfTransactions) {
         double depositAmount = amount - calculateTransactionFee(numberOfTransactions);
-        //return depositAmount > 0;
-        if (depositAmount > 0) {
-            return true;
-        } else {
-            throw new BadRequestException("El depósito y la comisión por transacción deben ser mayores a 0");
-        }
+        return depositAmount > 0;
     }
 
     protected Account(AccountType accountType, ClientType clientType) {
