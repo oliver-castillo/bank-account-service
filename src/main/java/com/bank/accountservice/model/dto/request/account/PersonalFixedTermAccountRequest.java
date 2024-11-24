@@ -1,4 +1,4 @@
-package com.bank.accountservice.model.dto.request;
+package com.bank.accountservice.model.dto.request.account;
 
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;

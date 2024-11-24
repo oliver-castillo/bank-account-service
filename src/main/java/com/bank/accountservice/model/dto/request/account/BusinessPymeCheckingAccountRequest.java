@@ -1,4 +1,4 @@
-package com.bank.accountservice.model.dto.request;
+package com.bank.accountservice.model.dto.request.account;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

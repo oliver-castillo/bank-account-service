@@ -29,6 +29,11 @@ public class GlobalExceptionHandler {
         return Mono.just(new ResponseEntity<>(new OperationResponse(e.getMessage(), HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND));
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public Mono<ResponseEntity<OperationResponse>> handleBadRequestException(BadRequestException e) {
+        return Mono.just(new ResponseEntity<>(new OperationResponse(e.getMessage(), HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST));
+    }
+
     @ExceptionHandler(value = {WebExchangeBindException.class})
     public Mono<ResponseEntity<Map<String, Object>>> handleMethodArgumentNotValidException(WebExchangeBindException e) {
         Map<String, String> errors = new LinkedHashMap<>();

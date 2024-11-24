@@ -27,7 +27,7 @@ public class PersonalSavingsAccount extends Account implements TransactionLimitA
     }
 
     @Override
-    protected boolean hasTransactionLimit() {
+    public boolean hasTransactionLimit() {
         return true;
     }
 }

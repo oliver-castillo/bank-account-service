@@ -27,7 +27,7 @@ public class PersonalCheckingAccount extends Account implements MaintenanceFeeAp
     }
 
     @Override
-    protected boolean hasMaintenanceFee() {
+    public boolean hasMaintenanceFee() {
         return true;
     }
 }

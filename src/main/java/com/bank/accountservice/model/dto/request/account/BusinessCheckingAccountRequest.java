@@ -1,4 +1,4 @@
-package com.bank.accountservice.model.dto.request;
+package com.bank.accountservice.model.dto.request.account;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class PersonalVipSavingsAccountRequest extends AccountRequest {
+public class BusinessCheckingAccountRequest extends BusinessAccountRequest {
     @NotNull
-    private Double averageMonthlyMinimumAmount;
+    private Double maintenanceFee;
 }

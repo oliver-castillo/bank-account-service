@@ -1,6 +1,6 @@
 package com.bank.accountservice.controller;
 
-import com.bank.accountservice.model.dto.request.AccountRequest;
+import com.bank.accountservice.model.dto.request.account.AccountRequest;
 import com.bank.accountservice.model.dto.response.AccountResponse;
 import com.bank.accountservice.model.dto.response.OperationResponse;
 import com.bank.accountservice.service.AccountService;

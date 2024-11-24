@@ -1,4 +1,4 @@
-package com.bank.accountservice.model.dto.request;
+package com.bank.accountservice.model.dto.request.transaction;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class PersonalCheckingAccountRequest extends AccountRequest {
+public class TransferRequest extends TransactionRequest {
     @NotNull
-    private Double maintenanceFee;
+    private String sourceAccountNumber;
+
+    @NotNull
+    private String destinationAccountNumber;
 }

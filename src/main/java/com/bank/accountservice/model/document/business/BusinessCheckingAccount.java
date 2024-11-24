@@ -21,7 +21,7 @@ public class BusinessCheckingAccount extends BusinessAccount implements Maintena
     }
 
     @Override
-    protected boolean hasMaintenanceFee() {
+    public boolean hasMaintenanceFee() {
         return true;
     }
 }

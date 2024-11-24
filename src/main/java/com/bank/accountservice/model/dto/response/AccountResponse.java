@@ -11,15 +11,16 @@ public record AccountResponse(
         String clientId,
         String accountNumber,
         double balance,
-        int maximumCommissionFreeTransactions,
         AccountType accountType,
         ClientType clientType,
         Integer transactionLimit,
-        Double maintenanceFee,
+        double maintenanceFee,
         Set<LocalDate> allowedTransactionDates,
         Double averageMonthlyMinimumAmount,
         Set<HolderResponse> holders,
-        Set<SignatoryResponse> signatories) {
+        Set<SignatoryResponse> signatories,
+        int freeTransactions,
+        double transactionFee) {
 
     public record HolderResponse(
             String name,

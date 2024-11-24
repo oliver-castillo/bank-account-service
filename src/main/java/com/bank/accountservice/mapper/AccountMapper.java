@@ -8,7 +8,7 @@ import com.bank.accountservice.model.document.personal.PersonalCheckingAccount;
 import com.bank.accountservice.model.document.personal.PersonalFixedTermAccount;
 import com.bank.accountservice.model.document.personal.PersonalSavingsAccount;
 import com.bank.accountservice.model.document.personal.PersonalVipSavingsAccount;
-import com.bank.accountservice.model.dto.request.*;
+import com.bank.accountservice.model.dto.request.account.*;
 import com.bank.accountservice.model.dto.response.AccountResponse;
 import org.mapstruct.Mapper;
 

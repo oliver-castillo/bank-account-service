@@ -1,9 +1,9 @@
-package com.bank.accountservice.model.dto.request;
+package com.bank.accountservice.model.dto.request.account;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record HolderRequest(
+public record SignatoryRequest(
         @NotBlank
         String name,
         @NotBlank

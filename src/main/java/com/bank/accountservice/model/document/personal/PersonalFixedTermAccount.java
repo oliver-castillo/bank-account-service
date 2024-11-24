@@ -21,7 +21,7 @@ public class PersonalFixedTermAccount extends Account {
     }
 
     @Override
-    protected boolean hasTransactionLimit() {
+    public boolean hasTransactionLimit() {
         return true;
     }
 }

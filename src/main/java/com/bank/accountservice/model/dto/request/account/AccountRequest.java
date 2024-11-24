@@ -1,4 +1,4 @@
-package com.bank.accountservice.model.dto.request;
+package com.bank.accountservice.model.dto.request.account;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -47,4 +47,10 @@ public abstract class AccountRequest {
 
     @NotNull
     private Integer maximumCommissionFreeTransactions;
+
+    @NotNull
+    private Integer freeTransactions;
+
+    @NotNull
+    private Double transactionFee;
 }
