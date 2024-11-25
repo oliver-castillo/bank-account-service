@@ -17,6 +17,8 @@ public abstract class Transaction extends BaseDocument {
 
     private LocalDateTime date = LocalDateTime.now();
 
+    private double transactionFee;
+
     protected Transaction(TransactionType transactionType) {
         this.transactionType = transactionType;
     }

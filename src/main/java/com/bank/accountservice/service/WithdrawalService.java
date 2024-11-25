@@ -4,6 +4,7 @@ import com.bank.accountservice.exception.BadRequestException;
 import com.bank.accountservice.exception.NotFoundException;
 import com.bank.accountservice.mapper.TransactionMapper;
 import com.bank.accountservice.model.document.Account;
+import com.bank.accountservice.model.document.Transaction;
 import com.bank.accountservice.model.dto.request.transaction.WithdrawalRequest;
 import com.bank.accountservice.model.dto.response.OperationResponse;
 import com.bank.accountservice.repository.AccountRepository;
@@ -24,28 +25,34 @@ public class WithdrawalService implements TransactionService<WithdrawalRequest>,
 
     @Override
     public Mono<OperationResponse> save(WithdrawalRequest request) {
+        Transaction mappedTransaction = mapper.toDocument(request);
         return makeWithdrawal(request)
-                .then(transactionRepository.save(mapper.toDocument(request)))
+                .flatMap(transactionFee -> {
+                    mappedTransaction.setTransactionFee(transactionFee);
+                    return transactionRepository.save(mappedTransaction);
+                })
                 .doOnSuccess(document -> log.info("Transaction {} created successfully", document.getId()))
                 .doOnError(error -> log.error("Error creating transaction: {}", error.getMessage()))
                 .doOnTerminate(() -> log.info("Transaction creation finished"))
                 .map(transaction -> new OperationResponse("Se realizó el retiro exitosamente", HttpStatus.CREATED));
     }
 
-    private Mono<Void> makeWithdrawal(WithdrawalRequest request) {
+    private Mono<Double> makeWithdrawal(WithdrawalRequest request) {
         Mono<Account> sourceAccount = accountRepository.findAccountByAccountNumber(request.getSourceAccountNumber())
-                .switchIfEmpty(Mono.error(new NotFoundException("La cuenta de origen no existe")));
+                .switchIfEmpty(Mono.error(new NotFoundException("La cuenta de origen no existe o está deshabilitada")));
         return Mono.zip(sourceAccount, countTransactions(request.getSourceAccountNumber()))
                 .flatMap(tuple -> {
                     Account account = tuple.getT1();
                     Long numberOfTransactions = tuple.getT2();
-                    if (!account.canMakeWithdrawal(request.getAmount(), numberOfTransactions)) {
-                        return Mono.error(new BadRequestException("La cuenta no tiene suficiente saldo para hacer el retiro"));
+                    if (account.canMakeWithdrawal(request.getAmount(), numberOfTransactions)) {
+                        double transactionFee = account.calculateTransactionFee(numberOfTransactions);
+                        double withdrawalAmount = request.getAmount();
+                        account.setBalance((account.getBalance() - withdrawalAmount) - transactionFee);
+                        return accountRepository.save(account).then(Mono.just(transactionFee));
+                    } else {
+                        return Mono.error(new BadRequestException("No se puede hacer el retiro"));
                     }
-                    double withdrawalAmount = request.getAmount() - account.calculateTransactionFee(numberOfTransactions);
-                    account.setBalance(account.getBalance() - withdrawalAmount);
-                    return accountRepository.save(account);
-                }).then();
+                });
     }
 
     @Override

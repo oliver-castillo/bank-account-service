@@ -48,7 +48,7 @@ public abstract class Account {
     }
 
     private boolean requiresTransactionFee(Long numberOfTransactions) {
-        return numberOfTransactions > freeTransactions;
+        return freeTransactions <= numberOfTransactions;
     }
 
     public double calculateTransactionFee(Long numberOfTransactions) {

@@ -4,6 +4,7 @@ import com.bank.accountservice.exception.BadRequestException;
 import com.bank.accountservice.exception.NotFoundException;
 import com.bank.accountservice.mapper.TransactionMapper;
 import com.bank.accountservice.model.document.Account;
+import com.bank.accountservice.model.document.Transaction;
 import com.bank.accountservice.model.dto.request.transaction.TransferRequest;
 import com.bank.accountservice.model.dto.response.OperationResponse;
 import com.bank.accountservice.repository.AccountRepository;
@@ -24,32 +25,38 @@ public class TransferService implements TransactionService<TransferRequest>, Tra
 
     @Override
     public Mono<OperationResponse> save(TransferRequest request) {
+        Transaction mappedTransaction = mapper.toDocument(request);
         return makeTransfer(request)
-                .then(transactionRepository.save(mapper.toDocument(request)))
+                .flatMap(transactionFee -> {
+                    mappedTransaction.setTransactionFee(transactionFee);
+                    return transactionRepository.save(mappedTransaction);
+                })
                 .doOnSuccess(document -> log.info("Transaction {} created successfully", document.getId()))
                 .doOnError(error -> log.error("Error creating transaction: {}", error.getMessage()))
                 .doOnTerminate(() -> log.info("Transaction creation finished"))
                 .map(transaction -> new OperationResponse("Se realizó la transferencia exitosamente", HttpStatus.CREATED));
     }
 
-    private Mono<Void> makeTransfer(TransferRequest request) {
+    private Mono<Double> makeTransfer(TransferRequest request) {
         Mono<Account> sourceAccount = accountRepository.findAccountByAccountNumber(request.getSourceAccountNumber())
-                .switchIfEmpty(Mono.error(new NotFoundException("La cuenta de origen no existe")));
+                .switchIfEmpty(Mono.error(new NotFoundException("La cuenta de origen no existe o está deshabilitada")));
         Mono<Account> destinationAccount = accountRepository.findAccountByAccountNumber(request.getDestinationAccountNumber())
-                .switchIfEmpty(Mono.error(new NotFoundException("La cuenta de destino no existe")));
+                .switchIfEmpty(Mono.error(new NotFoundException("La cuenta de destino no existe o está deshabilitada")));
         return Mono.zip(sourceAccount, destinationAccount, countTransactions(request.getSourceAccountNumber()))
                 .flatMap(tuple -> {
                     Account source = tuple.getT1();
                     Account destination = tuple.getT2();
                     Long numberOfTransactions = tuple.getT3();
-                    if (!source.canMakeTransfer(request.getAmount(), numberOfTransactions)) {
-                        return Mono.error(new BadRequestException("La cuenta no tiene suficiente saldo para hacer la transferencia"));
+                    if (source.canMakeTransfer(request.getAmount(), numberOfTransactions)) {
+                        Double transactionFee = source.calculateTransactionFee(numberOfTransactions);
+                        double transferAmount = request.getAmount();
+                        source.setBalance((source.getBalance() - transferAmount) - transactionFee);
+                        destination.setBalance(destination.getBalance() + transferAmount);
+                        return Mono.zip(accountRepository.save(source), accountRepository.save(destination)).then(Mono.just(transactionFee));
+                    } else {
+                        return Mono.error(new BadRequestException("No se puede hacer la transferencia"));
                     }
-                    double transferAmount = request.getAmount() - source.calculateTransactionFee(numberOfTransactions);
-                    source.setBalance(source.getBalance() - transferAmount);
-                    destination.setBalance(destination.getBalance() + transferAmount);
-                    return Mono.zip(accountRepository.save(source), accountRepository.save(destination));
-                }).then();
+                });
     }
 
     @Override
