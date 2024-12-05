@@ -24,7 +24,7 @@ public class TransferService implements TransactionService<TransferRequest>, Tra
     private final TransactionMapper mapper;
 
     @Override
-    public Mono<OperationResponse> save(TransferRequest request) {
+    public Mono<OperationResponse> makeTransaction(TransferRequest request) {
         Transaction mappedTransaction = mapper.toDocument(request);
         return makeTransfer(request)
                 .flatMap(transactionFee -> {
@@ -48,7 +48,7 @@ public class TransferService implements TransactionService<TransferRequest>, Tra
                     Account destination = tuple.getT2();
                     Long numberOfTransactions = tuple.getT3();
                     if (source.canMakeTransfer(request.getAmount(), numberOfTransactions)) {
-                        Double transactionFee = source.calculateTransactionFee(numberOfTransactions);
+                        double transactionFee = source.calculateTransactionFee(numberOfTransactions);
                         double transferAmount = request.getAmount();
                         source.setBalance((source.getBalance() - transferAmount) - transactionFee);
                         destination.setBalance(destination.getBalance() + transferAmount);

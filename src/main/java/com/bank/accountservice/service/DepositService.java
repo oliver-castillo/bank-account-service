@@ -24,7 +24,7 @@ public class DepositService implements TransactionService<DepositRequest>, Trans
     private final TransactionMapper mapper;
 
     @Override
-    public Mono<OperationResponse> save(DepositRequest request) {
+    public Mono<OperationResponse> makeTransaction(DepositRequest request) {
         Transaction mappedTransaction = mapper.toDocument(request);
         return makeDeposit(request)
                 .flatMap(transactionFee -> {

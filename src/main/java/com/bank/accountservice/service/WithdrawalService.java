@@ -24,7 +24,7 @@ public class WithdrawalService implements TransactionService<WithdrawalRequest>,
     private final TransactionMapper mapper;
 
     @Override
-    public Mono<OperationResponse> save(WithdrawalRequest request) {
+    public Mono<OperationResponse> makeTransaction(WithdrawalRequest request) {
         Transaction mappedTransaction = mapper.toDocument(request);
         return makeWithdrawal(request)
                 .flatMap(transactionFee -> {

@@ -22,18 +22,18 @@ public class TransactionController {
     @PostMapping(value = "transfer")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<OperationResponse> save(@RequestBody @Valid TransferRequest request) {
-        return transferService.save(request);
+        return transferService.makeTransaction(request);
     }
 
     @PostMapping(value = "withdrawal")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<OperationResponse> save(@RequestBody @Valid WithdrawalRequest request) {
-        return withdrawalService.save(request);
+        return withdrawalService.makeTransaction(request);
     }
 
     @PostMapping(value = "deposit")
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<OperationResponse> save(@RequestBody @Valid DepositRequest request) {
-        return depositService.save(request);
+        return depositService.makeTransaction(request);
     }
 }
